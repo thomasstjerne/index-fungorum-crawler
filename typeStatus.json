@@ -1,0 +1,272 @@
+[
+    {
+      "codes": [
+        "botanical"
+      ],
+      "name": "epitype",
+      "primary": false,
+      "root": "epitype"
+    },
+    {
+      "codes": [
+        "zoological"
+      ],
+      "name": "ergatotype",
+      "primary": false,
+      "root": "ergatotype"
+    },
+    {
+      "codes": [
+        "botanical",
+        "zoological"
+      ],
+      "name": "ex type",
+      "primary": false,
+      "root": "ex type"
+    },
+    {
+      "codes": [
+        "zoological"
+      ],
+      "name": "hapantotype",
+      "primary": false,
+      "root": "hapantotype"
+    },
+    {
+      "codes": [
+        "bacterial",
+        "botanical",
+        "zoological"
+      ],
+      "name": "holotype",
+      "primary": true,
+      "root": "holotype"
+    },
+    {
+      "codes": [
+        "botanical"
+      ],
+      "name": "iconotype",
+      "primary": false,
+      "root": "iconotype"
+    },
+    {
+      "codes": [
+        "bacterial",
+        "botanical",
+        "zoological"
+      ],
+      "name": "lectotype",
+      "primary": true,
+      "root": "lectotype"
+    },
+    {
+      "codes": [
+        "bacterial",
+        "botanical",
+        "zoological"
+      ],
+      "name": "neotype",
+      "primary": true,
+      "root": "neotype"
+    },
+    {
+      "codes": [
+        "botanical"
+      ],
+      "name": "original material",
+      "primary": true,
+      "root": "original material"
+    },
+    {
+      "codes": [
+        "botanical",
+        "zoological"
+      ],
+      "name": "paratype",
+      "primary": true,
+      "root": "paratype"
+    },
+    {
+      "codes": [
+        "bacterial"
+      ],
+      "name": "pathotype",
+      "primary": false,
+      "root": "pathotype"
+    },
+    {
+      "codes": [
+        "botanical",
+        "zoological"
+      ],
+      "name": "syntype",
+      "primary": true,
+      "root": "syntype"
+    },
+    {
+      "codes": [
+        "botanical",
+        "zoological"
+      ],
+      "name": "topotype",
+      "primary": false,
+      "root": "topotype"
+    },
+    {
+      "base": "holotype",
+      "codes": [
+        "botanical"
+      ],
+      "name": "isotype",
+      "root": "holotype"
+    },
+    {
+      "base": "epitype",
+      "codes": [
+        "botanical"
+      ],
+      "name": "isoepitype",
+      "root": "epitype"
+    },
+    {
+      "base": "lectotype",
+      "codes": [
+        "botanical"
+      ],
+      "name": "isolectotype",
+      "root": "lectotype"
+    },
+    {
+      "base": "neotype",
+      "codes": [
+        "botanical"
+      ],
+      "name": "isoneotype",
+      "root": "neotype"
+    },
+    {
+      "base": "paratype",
+      "codes": [
+        "botanical"
+      ],
+      "name": "isoparatype",
+      "root": "paratype"
+    },
+    {
+      "base": "syntype",
+      "codes": [
+        "botanical"
+      ],
+      "name": "isosyntype",
+      "root": "syntype"
+    },
+    {
+      "base": "lectotype",
+      "codes": [
+        "zoological"
+      ],
+      "name": "paralectotype",
+      "root": "lectotype"
+    },
+    {
+      "base": "neotype",
+      "codes": [
+        "zoological"
+      ],
+      "name": "paraneotype",
+      "root": "neotype"
+    },
+    {
+      "base": "paralectotype",
+      "codes": [
+        "zoological"
+      ],
+      "name": "allolectotype",
+      "root": "lectotype"
+    },
+    {
+      "base": "paraneotype",
+      "codes": [
+        "zoological"
+      ],
+      "name": "alloneotype",
+      "root": "neotype"
+    },
+    {
+      "base": "paratype",
+      "codes": [
+        "zoological"
+      ],
+      "name": "allotype",
+      "root": "paratype"
+    },
+    {
+      "base": "holotype",
+      "name": "plastoholotype",
+      "root": "holotype"
+    },
+    {
+      "base": "isotype",
+      "name": "plastoisotype",
+      "root": "holotype"
+    },
+    {
+      "base": "lectotype",
+      "name": "plastolectotype",
+      "root": "lectotype"
+    },
+    {
+      "base": "neotype",
+      "name": "plastoneotype",
+      "root": "neotype"
+    },
+    {
+      "base": "paratype",
+      "codes": [
+        "botanical",
+        "zoological"
+      ],
+      "name": "plastoparatype",
+      "root": "paratype"
+    },
+    {
+      "base": "syntype",
+      "codes": [
+        "botanical",
+        "zoological"
+      ],
+      "name": "plastosyntype",
+      "root": "syntype"
+    },
+    {
+      "codes": [
+        "botanical",
+        "zoological"
+      ],
+      "name": "plastotype",
+      "primary": false,
+      "root": "plastotype"
+    },
+    {
+      "codes": [
+        "zoological"
+      ],
+      "name": "plesiotype",
+      "primary": false,
+      "root": "plesiotype"
+    },
+    {
+      "codes": [
+        "zoological"
+      ],
+      "name": "homoeotype",
+      "primary": false,
+      "root": "homoeotype"
+    },
+    {
+      "name": "other",
+      "primary": false,
+      "root": "other"
+    }
+  ]
