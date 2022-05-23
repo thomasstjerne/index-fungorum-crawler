@@ -1,4 +1,5 @@
 const fs = require("fs");
+const _ = require('lodash')
 
 const crawl = require('./crawl')
 const parse = require('./parse')
