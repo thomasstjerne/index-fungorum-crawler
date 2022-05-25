@@ -103,7 +103,7 @@ const run = (idlist) => co(function* () {
     if(ERROR_IDS.size > 0 && numberOfRetriesOnErrorlist < 10){
       console.log(`Num errors: ${ERROR_IDS.size}, retrying...`)
       numberOfRetriesOnErrorlist ++;
-      run([[...ERROR_IDS]])
+      run([...ERROR_IDS])
     } else {
       let errorsStream = fs.createWriteStream(`${outputDir}/errors.json`, {
         flags: "a",
