@@ -77,7 +77,7 @@ const run = (idlist) => co(function* () {
       .fill()
       .map((element, index) => index + offset)
       .map(getRecord);
-    console.log(res)
+  //  console.log(res)
     offset += res.length;
     if (((offset -1) % 1000) === 0){
       console.log(`Traversed ${offset} of ${maxId} ids so far and found ${recordsFound} records`)
