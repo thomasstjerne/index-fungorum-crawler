@@ -197,6 +197,20 @@ const getNomStatus = record => {
     return record?.NOMENCLATURAL_x0020_COMMENT ? record?.NOMENCLATURAL_x0020_COMMENT.split(",")[0] : ""
 };
 
+const getNamePublishedInPageLink = record => {
+    if(record?.CORRECTION && record?.BaseURL){
+        let splitted = record?.CORRECTION.split("&ImageFileName=");
+        if(splitted.length === 2){
+            return record?.BaseURL + splitted[1]
+        } else {
+            return ""
+        }
+
+    } else {
+        return record?.CORRECTION ? record?.CORRECTION.replace(/\$[A-Z]http:/g, "http:") : "";
+    }
+}
+
 const getColdpStatus = (record) => {
    
         if(record?.EDITORIAL_x0020_COMMENT && record?.EDITORIAL_x0020_COMMENT.startsWith('DEPRECATED RECORD')){
@@ -342,7 +356,7 @@ let taxaWritten = 0;
     });
    // ['ID','parentID','scientificName','authorship','rank','basionymID', 'status', 'link', 'remarks', 'nameStatus','nameRemarks', 'namePublishedInPageLink', 'extinct', 'referenceID', 'nameReferenceID'],
     const transformer = transform(function(record, callback){
-        const namePublishedInPageLink = record?.CORRECTION ? record?.CORRECTION.replace(/\$[A-Z]http:/g, "http:") : "";
+        const namePublishedInPageLink =  getNamePublishedInPageLink(record) // record?.CORRECTION ? record?.CORRECTION.replace(/\$[A-Z]http:/g, "http:") : "";
         const status = getColdpStatus(record);
         const extinct = isExtinct(record)
         const ID = record?.RECORD_x0020_NUMBER;
