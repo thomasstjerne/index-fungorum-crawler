@@ -80,7 +80,7 @@ const getPublishedIn = (record) => {
 const shouldWriteParent = record => RANKS[record?.INFRASPECIFIC_x0020_RANK] && isAcceptedTaxon(record)
 
 const isAcceptedTaxon = record => {
-    if(record?.EDITORIAL_x0020_COMMENT && record?.EDITORIAL_x0020_COMMENT.startsWith('DEPRECATED RECORD')){
+    if(record?.EDITORIAL_x0020_COMMENT && (record?.EDITORIAL_x0020_COMMENT.startsWith('DEPRECATED RECORD') || record?.EDITORIAL_x0020_COMMENT === 'ORTHOGRAPHIC VARIANT RECORD - please do not try to interpret any data on this page or on any of the linked pages' )){
         return false
     } else {
         return !record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER || (record?.RECORD_x0020_NUMBER === record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER);
@@ -275,7 +275,10 @@ let taxaWritten = 0;
             }
             
         }
-        if(record?.NAME_x0020_OF_x0020_FUNGUS === "UNPUBLISHED NAME" || record?.EDITORIAL_x0020_COMMENT === "DEPRECATED RECORD - please do not try to interpret any data on this page or on any of the linked pages"){
+        if(record?.NAME_x0020_OF_x0020_FUNGUS === "UNPUBLISHED NAME" || 
+            record?.EDITORIAL_x0020_COMMENT === "DEPRECATED RECORD - please do not try to interpret any data on this page or on any of the linked pages" ||
+            record?.EDITORIAL_x0020_COMMENT === "An isonym, see Art. 6.3 Note 2" 
+            ){
             row = null;
         }
 
