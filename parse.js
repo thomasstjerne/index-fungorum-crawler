@@ -194,7 +194,7 @@ const getNomStatus = record => {
         NOMSTATUS.add(record?.NOMENCLATURAL_x0020_COMMENT.split(",")[0])
     } */
     
-    return record?.NOMENCLATURAL_x0020_COMMENT ? record?.NOMENCLATURAL_x0020_COMMENT.split(",")[0] : ""
+    return record?.NOMENCLATURAL_x0020_COMMENT ? record?.NOMENCLATURAL_x0020_COMMENT.split(",")[0] : record?.EDITORIAL_x0020_COMMENT?.startsWith("Unavailable;") ? "Nom. inval." : ""
 };
 
 const getNamePublishedInPageLink = record => {
@@ -216,7 +216,7 @@ const getColdpStatus = (record) => {
         if(record?.EDITORIAL_x0020_COMMENT && record?.EDITORIAL_x0020_COMMENT.startsWith('DEPRECATED RECORD')){
             return "bare name"
         } else if (!record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER || (record?.RECORD_x0020_NUMBER === record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER)) {
-            return invalstatus.includes(getNomStatus(record)) ? "bare name" : "accepted"
+            return invalstatus.includes(getNomStatus(record)) || record?.EDITORIAL_x0020_COMMENT?.startsWith('') ? "bare name" : "accepted"
         } else {
             return "synonym"
         }
