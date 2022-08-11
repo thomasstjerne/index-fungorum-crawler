@@ -1,2 +1,0 @@
-nameID	relatedNameID	type
-80649	17391	TYPE

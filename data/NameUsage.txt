@@ -1,5 +1,0 @@
-ID	parentID	scientificName	authorship	rank	basionymID	status	link	remarks	nameStatus	nameRemarks	namePublishedInPageLink	extinct	referenceID	nameReferenceID
-247773	239546	Agaricus violaceus	L.	species	247773	synonym	http://www.indexfungorum.org/Names/NamesRecord.asp?RecordID=247773				https://biodiversitylibrary.org/page/359194	false	247773	247773
-239546	17391	Cortinarius violaceus	(L.) Gray	species	247773	accepted	http://www.indexfungorum.org/Names/NamesRecord.asp?RecordID=239546				https://biodiversitylibrary.org/page/30087330	false	239546	239546
-17391	80649	Cortinarius	(Pers.) Gray	genus		accepted	http://www.indexfungorum.org/Names/NamesRecord.asp?RecordID=17391		Nom. cons.	Nom. cons., see Art. 14	https://biodiversitylibrary.org/page/30087329	false	17391	17391
-80649	90508	Cortinariaceae	Singer	family		accepted	http://www.indexfungorum.org/Names/NamesRecord.asp?RecordID=80649		Nom. cons.	Nom. cons., see Art. 14		false	80649	80649

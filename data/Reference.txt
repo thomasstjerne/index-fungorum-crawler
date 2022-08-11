@@ -1,8 +1,0 @@
-ID	author	containerTitle	year	page	volume	issue	citation	isbn	issn	doi	link
-247773		Species plantarum	1753	1173	2		In: Species plantarum 2: 1173. (1753).				
-239546		Natural Arrangement of British Plants	1821	628	1		In: Natural Arrangement of British Plants 1: 628. (1821).				
-551873	Liimatainen, Kim, Pokorny, Kirk, Dentinger & Niskanen	Fungal Diversity	2022	[8]			Liimatainen, Kim, Pokorny, Kirk, Dentinger & Niskanen. In: Fungal Diversity 10.1007/s13225-022-00499-9, [8]. (2022).			10.1007/s13225-022-00499-9	
-17391		Natural Arrangement of British Plants	1821	627	1		In: Natural Arrangement of British Plants 1: 627. (1821).				
-80649		Lilloa	1951	522	22		In: Lilloa 22: 522. (1951).				
-551874	Liimatainen, Kim, Pokorny, Kirk, Dentinger & Niskanen	Fungal Diversity	2022	[8]			Liimatainen, Kim, Pokorny, Kirk, Dentinger & Niskanen. In: Fungal Diversity 10.1007/s13225-022-00499-9, [8]. (2022).			10.1007/s13225-022-00499-9	
-590644	Brandrud	Nordic Journal of Botany	1983	587	3		Brandrud. In: Nordic Journal of Botany 3: 587. (1983).		0107-055X		
