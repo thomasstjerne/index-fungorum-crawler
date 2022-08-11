@@ -1,0 +1,5 @@
+nameID	status	citation	associatedSequences	referenceID
+247773		Typification: Micheli, tab. 49, fig. 1; Buxbaum, tab. 11; Bulliard, pl. 598, fig. 2A, Europe		
+247773	Lectotype	Lectotype Pl. 598, fig. 2A (Bulliard, Herbier de la France. 1793)		551873
+247773	Epitype	Epitype S, Lindström et al. CFP 1197		551874
+247773	Neotype	Neotype S, Moser 74/208 [Not Code compliant, original material available (illustrations); contrary to Art. 9.11], Sweden		590644

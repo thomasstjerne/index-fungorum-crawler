@@ -5,7 +5,7 @@ const co = require("co");
 const parseString = require("xml2js").parseString;
 const columns = require("./columns");
 const outputDir = 'data';
-let taxonStream = fs.createWriteStream(`${outputDir}/taxa.txt`, {
+let taxonStream = fs.createWriteStream(`${outputDir}/indexfungorum.txt`, {
   flags: "a",
 });
 taxonStream.write(`${columns.join("\t")}\n`);
