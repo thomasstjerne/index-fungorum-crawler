@@ -483,7 +483,7 @@ let taxaWritten = 0;
             let linkedAcceptedId = getLinkedAcceptedId(record)
             NAMES_WRITTEN.set(`${record.NAME_x0020_OF_x0020_FUNGUS} ${record?.AUTHORS || ''}`, {ID, acceptedID: linkedAcceptedId || record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER})
             taxaWritten++
-            console.log(`${record.NAME_x0020_OF_x0020_FUNGUS} ${record?.RECORD_x0020_NUMBER} ${nameAlreadyWrittenToId?.acceptedID}`)
+           // console.log(`${record.NAME_x0020_OF_x0020_FUNGUS} ${record?.RECORD_x0020_NUMBER} ${nameAlreadyWrittenToId?.acceptedID}`)
 
         }
         if ((taxaWritten % 10000) === 0){
