@@ -1,2 +1,0 @@
-ID	author	containerTitle	year	page	volume	issue	citation	isbn	issn	doi	link
-421287		Monograph of the Myxogastres	1892	165			In: Monograph of the Myxogastres 165. (1892).				
