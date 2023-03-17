@@ -196,7 +196,7 @@ const isExtinct = (record) => {
 
 const getTaxonRemarks = record => {
 
-    if(isAcceptedTaxon(record) && record?.Genus_x0020_name && [...INF_RANKS, "sp."].includes(record?.INFRASPECIFIC_x0020_RANK) && !GENUS_TO_ID.get(record?.Genus_x0020_name) ){
+    if(isAcceptedTaxon(record) && record?.Genus_x0020_name && [...INF_RANKS, "sp."].includes(record?.INFRASPECIFIC_x0020_RANK) && !GENUS_TO_ID.has(record?.Genus_x0020_name) ){
         return `No accepted genus "${record?.Genus_x0020_name}" found in Index Fungorum for this accepted ${record?.INFRASPECIFIC_x0020_RANK === 'sp.' ? "species" : INFRASPECIFIC_RANKS[record?.INFRASPECIFIC_x0020_RANK]}`
     } else {
         return ""
@@ -208,8 +208,13 @@ const getNomStatus = record => {
    /*  if(record?.NOMENCLATURAL_x0020_COMMENT){
         NOMSTATUS.add(record?.NOMENCLATURAL_x0020_COMMENT.split(",")[0])
     } */
-    
-    return record?.NOMENCLATURAL_x0020_COMMENT ? record?.NOMENCLATURAL_x0020_COMMENT.split(",")[0] : record?.EDITORIAL_x0020_COMMENT?.startsWith("Unavailable;") ? "Nom. inval." : ""
+    if(record?.NOMENCLATURAL_x0020_COMMENT){
+        return record?.NOMENCLATURAL_x0020_COMMENT.split(",")[0] 
+    } else if(record?.EDITORIAL_x0020_COMMENT && record.EDITORIAL_x0020_COMMENT.startsWith("Unavailable;")){
+        return "Nom. inval."
+    } else {
+        return ""
+    }
 };
 
 const getNamePublishedInPageLink = record => {
@@ -239,7 +244,7 @@ const getColdpStatus = (record) => {
 }
 
 let taxaWritten = 0;
-  const writeTaxa = async (inputStream, outputStream, profileStream) => {
+/* const writeTaxa = async (inputStream, outputStream, profileStream) => {
     const parser = parse({
       delimiter: "\t",
       columns: true,
@@ -310,7 +315,8 @@ let taxaWritten = 0;
     })
     
     inputStream.pipe(parser).pipe(transformer).pipe(outputStream)
-  };
+  }; */
+
   const writeColDPReference = (record, referenceWriteStream) => {
     // ['ID', 'author', 'containerTitle','year','page', 'volume', 'issue', 'citation', 'isbn', 'issn', 'doi', 'link']
 
@@ -402,7 +408,7 @@ let taxaWritten = 0;
         // to avoid duplicates:
         const nameAlreadyWrittenToId =  NAMES_WRITTEN.get(`${record.NAME_x0020_OF_x0020_FUNGUS} ${record?.AUTHORS || ''}`);
         let row = null;
-        if(record?.NAME_x0020_OF_x0020_FUNGUS === "UNPUBLISHED NAME" || record?.EDITORIAL_x0020_COMMENT === "DEPRECATED RECORD - please do not try to interpret any data on this page or on any of the linked pages"){
+        if(record?.NAME_x0020_OF_x0020_FUNGUS === "UNPUBLISHED NAME" || record?.EDITORIAL_x0020_COMMENT === "DEPRECATED RECORD - please do not try to interpret any data on this page or on any of the linked pages" || record?.EDITORIAL_x0020_COMMENT === "ORTHOGRAPHIC VARIANT RECORD - please do not try to interpret any data on this page or on any of the linked pages"){
             row = null;
         }
         else if(shouldWriteParent(record)){
@@ -416,7 +422,8 @@ let taxaWritten = 0;
             }
         } else if(INF_RANKS.includes(record?.INFRASPECIFIC_x0020_RANK)){   
             if(record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER){
-                let parentId = isAcceptedTaxon(record) ?  (SPECIES_NAME_TO_ID.get(`${record?.Genus_x0020_name}_${record?.SPECIFIC_x0020_EPITHET}`) ? SPECIES_NAME_TO_ID.get(`${record?.Genus_x0020_name}_${record?.SPECIFIC_x0020_EPITHET}`).RECORD_x0020_NUMBER : '')  : record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER;
+                let parentSpecies = SPECIES_NAME_TO_ID.get(`${record?.Genus_x0020_name}_${record?.SPECIFIC_x0020_EPITHET}`);
+                let parentId = isAcceptedTaxon(record) && parentSpecies ?  _.get(parentSpecies, 'RECORD_x0020_NUMBER') : record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER;
                 let referenceID =  writeColDPReference(record, referenceWriteStream)
                 row = `${ID}\t${parentId || ''}\t${record.NAME_x0020_OF_x0020_FUNGUS}\t${record?.AUTHORS || ''}\t${INFRASPECIFIC_RANKS[record?.INFRASPECIFIC_x0020_RANK]}\t${record?.BASIONYM_x0020_RECORD_x0020_NUMBER || ''}\t${status}\t${url+record?.RECORD_x0020_NUMBER}\t${getTaxonRemarks(record)}\t${getNomStatus(record)}\t${record?.NOMENCLATURAL_x0020_COMMENT || ''}\t${namePublishedInPageLink}\t${extinct}\t${referenceID}\t${referenceID}\n`
            // writeColDPReference(record, referenceWriteStream)
