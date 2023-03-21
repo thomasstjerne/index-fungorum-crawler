@@ -6,7 +6,7 @@ const _ = require('lodash')
 const doiRegex = require('doi-regex');
 const typeStatus = require('./typeStatus.json')
 const invalstatus = require('./invalstatus.json')
-const coldpColumns = require('./coldpColumns')
+const coldpColumns = require('./coldpColumns');
 const PARENT_ID = new Map();
 const SPECIES_NAME_TO_ID = new Map();
 const SPECIES_SYN_TO_ID = new Map();
@@ -88,8 +88,10 @@ const getPublishedIn = (record) => {
 
 const shouldWriteParent = record => RANKS[record?.INFRASPECIFIC_x0020_RANK] && isAcceptedTaxon(record)
 
+const isDeprecated = record => record?.EDITORIAL_x0020_COMMENT && (record?.EDITORIAL_x0020_COMMENT.startsWith('DEPRECATED RECORD') || record?.EDITORIAL_x0020_COMMENT === 'ORTHOGRAPHIC VARIANT RECORD - please do not try to interpret any data on this page or on any of the linked pages' );
+
 const isAcceptedTaxon = record => {
-    if(record?.EDITORIAL_x0020_COMMENT && (record?.EDITORIAL_x0020_COMMENT.startsWith('DEPRECATED RECORD') || record?.EDITORIAL_x0020_COMMENT === 'ORTHOGRAPHIC VARIANT RECORD - please do not try to interpret any data on this page or on any of the linked pages' )){
+    if(isDeprecated(record)){
         return false
     } else {
         return !record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER || (record?.RECORD_x0020_NUMBER === record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER);
@@ -111,7 +113,7 @@ const readParents = async (inputStream) => {
    
     const transformer = transform(function(record, callback){
        // ALL_RANKS.add(record?.INFRASPECIFIC_x0020_RANK)
-        if(record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER){
+        if(record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER && !isDeprecated(record)){
             ID_TO_ACCEPTED_ID.set(record?.RECORD_x0020_NUMBER, record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER)
         }
         if(shouldWriteParent(record)){
@@ -144,36 +146,53 @@ const readParents = async (inputStream) => {
     });
    
     const transformer = transform(function(record, callback){
-        if(record?.INFRASPECIFIC_x0020_RANK === "sp."){
-            IF_HIGHER_RANKS.forEach(rank => {
-                let pidx = IF_HIGHER_RANKS.indexOf(rank) +1;
-                // skip Insertae Sedis parents
-                while(["Incertae sedis", "Fossil Fungi", "Fossil Ascomycota"].includes(record[IF_HIGHER_RANKS[pidx]])){
-                    pidx++
+        try {
+            const test = parentLinksProccessed  === 367207 //!isNaN(Number(record?.RECORD_x0020_NUMBER)) && Number(record?.RECORD_x0020_NUMBER)   === 558555;
+           
+            if(record?.INFRASPECIFIC_x0020_RANK === "sp."){
+               
+                IF_HIGHER_RANKS.forEach(rank => {
+                    let pidx = IF_HIGHER_RANKS.indexOf(rank) +1;
+                    // skip Insertae Sedis parents
+                    while(["Incertae sedis", "Fossil Fungi", "Fossil Ascomycota"].includes(record[IF_HIGHER_RANKS[pidx]])){
+                        pidx++
+                    }
+                    if( pidx < IF_HIGHER_RANKS.length && record[rank] && record[IF_HIGHER_RANKS[pidx]]){
+                        let pRank = IF_HIGHER_RANKS[pidx];
+                        const parentId = IF_HIGHER_RANKS_DATA[pRank].get(record[pRank]);
+                        const id = IF_HIGHER_RANKS_DATA[rank].get(record[rank])
+                        PARENT_ID.set(id, parentId)
+                    }
+                    
+                })
+                
+                // we want species IDs as parents for subspecies, varieties and forms
+                if(record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER && !getLinkedAcceptedId(record)){ // If this is not present, it may be be a typification record or otherwise unwanted record
+                    
+                    if(isAcceptedTaxon(record)){
+                        SPECIES_NAME_TO_ID.set(`${record?.Genus_x0020_name}_${record?.SPECIFIC_x0020_EPITHET}`, {RECORD_x0020_NUMBER: record.RECORD_x0020_NUMBER, AUTHORS: record.AUTHORS})
+                        
+                    } else {
+                        SPECIES_SYN_TO_ID.set(`${record?.Genus_x0020_name}_${record?.SPECIFIC_x0020_EPITHET}`, {RECORD_x0020_NUMBER: record.RECORD_x0020_NUMBER, AUTHORS: record.AUTHORS})
+                        
+                    }
                 }
-                if( pidx < IF_HIGHER_RANKS.length && record[rank] && record[IF_HIGHER_RANKS[pidx]]){
-                    let pRank = IF_HIGHER_RANKS[pidx];
-                    const parentId = IF_HIGHER_RANKS_DATA[pRank].get(record[pRank]);
-                    const id = IF_HIGHER_RANKS_DATA[rank].get(record[rank])
-                    PARENT_ID.set(id, parentId)
+
+                parentLinksProccessed ++;
+                if ((parentLinksProccessed % 10000) === 0){
+                    console.log(`Extracted parent links from ${parentLinksProccessed} species`)
                 }
-            })
-            // we want species IDs as parents for subspecies, varieties and forms
-            if(record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER && !getLinkedAcceptedId(record)){ // If this is not present, it maybe be a typification record or otherwise unwanted record
-                if(isAcceptedTaxon(record)){
-                    SPECIES_NAME_TO_ID.set(`${record?.Genus_x0020_name}_${record?.SPECIFIC_x0020_EPITHET}`, {RECORD_x0020_NUMBER: record.RECORD_x0020_NUMBER, AUTHORS: record.AUTHORS})
-                } else {
-                    SPECIES_SYN_TO_ID.set(`${record?.Genus_x0020_name}_${record?.SPECIFIC_x0020_EPITHET}`, {RECORD_x0020_NUMBER: record.RECORD_x0020_NUMBER, AUTHORS: record.AUTHORS})
-                }
+                
+
             }
-            
-            parentLinksProccessed ++;
-            if ((parentLinksProccessed % 10000) === 0){
-                console.log(`Extracted parent links from ${parentLinksProccessed} species`)
-            }
-            
+
+            callback(null, null)
+        } catch (error) {
+            console.log("### Error")
+            throw error
+
         }
-        callback(null, null)
+       
     }, {
       parallel: 5
     })
@@ -371,7 +390,7 @@ let taxaWritten = 0;
     }
     // Traverses chained synonyms and gives the accepted ID
     const getLinkedAcceptedId = (record) => {
-        
+        const test = record?.RECORD_x0020_NUMBER === '558557';
         let linkedAcceptedId;
             if(record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER && record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER !== record?.RECORD_x0020_NUMBER){
                 let accepted = record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER;
@@ -380,7 +399,7 @@ let taxaWritten = 0;
               
                 while(!done ){
                     accepted = ID_TO_ACCEPTED_ID.get(accepted);
-                    done = ID_TO_ACCEPTED_ID.get(accepted) === accepted;
+                    done = !accepted  || ID_TO_ACCEPTED_ID.get(accepted) === accepted;
                     if(done){
                         linkedAcceptedId = accepted;
                     }
@@ -390,7 +409,7 @@ let taxaWritten = 0;
         return linkedAcceptedId;
     }
   const writeTaxaColDP = async (inputStream, outputStream, referenceWriteStream, typeMaterialWriteStream, nameRelationWriteStream) => {
-
+    console.log("writeTaxaColDP")
     const parser = parse({
       delimiter: "\t",
       columns: true,
@@ -415,7 +434,7 @@ let taxaWritten = 0;
             let parentId = PARENT_ID.get(record?.RECORD_x0020_NUMBER);
             if(parentId || record?.INFRASPECIFIC_x0020_RANK === "regn.") {
                 let referenceID = writeColDPReference(record, referenceWriteStream);
-                row = `${ID}\t${parentId || ''}\t${record.NAME_x0020_OF_x0020_FUNGUS}\t${record?.AUTHORS || ''}\t${RANKS[record?.INFRASPECIFIC_x0020_RANK].name}\t\t${status}\t${url+record?.RECORD_x0020_NUMBER}\t${getTaxonRemarks(record)}\t${getNomStatus(record)}\t${record?.NOMENCLATURAL_x0020_COMMENT || ''}\t${namePublishedInPageLink}\t${extinct}\t${referenceID}\t${referenceID}\n`  // TODO all needed data
+                row = `${ID}\t${parentId || ''}\t${record?.NAME_x0020_OF_x0020_FUNGUS}\t${record?.AUTHORS || ''}\t${RANKS[record?.INFRASPECIFIC_x0020_RANK].name}\t\t${status}\t${url+record?.RECORD_x0020_NUMBER}\t${getTaxonRemarks(record)}\t${getNomStatus(record)}\t${record?.NOMENCLATURAL_x0020_COMMENT || ''}\t${namePublishedInPageLink}\t${extinct}\t${referenceID}\t${referenceID}\n`  // TODO all needed data
                 
                // writeColDPTypeMaterial(record, typeMaterialWriteStream)
                 writeColDPNameRelation(record, nameRelationWriteStream)
@@ -425,7 +444,7 @@ let taxaWritten = 0;
                 let parentSpecies = SPECIES_NAME_TO_ID.get(`${record?.Genus_x0020_name}_${record?.SPECIFIC_x0020_EPITHET}`);
                 let parentId = isAcceptedTaxon(record) && parentSpecies ?  _.get(parentSpecies, 'RECORD_x0020_NUMBER') : record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER;
                 let referenceID =  writeColDPReference(record, referenceWriteStream)
-                row = `${ID}\t${parentId || ''}\t${record.NAME_x0020_OF_x0020_FUNGUS}\t${record?.AUTHORS || ''}\t${INFRASPECIFIC_RANKS[record?.INFRASPECIFIC_x0020_RANK]}\t${record?.BASIONYM_x0020_RECORD_x0020_NUMBER || ''}\t${status}\t${url+record?.RECORD_x0020_NUMBER}\t${getTaxonRemarks(record)}\t${getNomStatus(record)}\t${record?.NOMENCLATURAL_x0020_COMMENT || ''}\t${namePublishedInPageLink}\t${extinct}\t${referenceID}\t${referenceID}\n`
+                row = `${ID}\t${parentId || ''}\t${record?.NAME_x0020_OF_x0020_FUNGUS}\t${record?.AUTHORS || ''}\t${INFRASPECIFIC_RANKS[record?.INFRASPECIFIC_x0020_RANK]}\t${record?.BASIONYM_x0020_RECORD_x0020_NUMBER || ''}\t${status}\t${url+record?.RECORD_x0020_NUMBER}\t${getTaxonRemarks(record)}\t${getNomStatus(record)}\t${record?.NOMENCLATURAL_x0020_COMMENT || ''}\t${namePublishedInPageLink}\t${extinct}\t${referenceID}\t${referenceID}\n`
            // writeColDPReference(record, referenceWriteStream)
                 writeColDPTypeMaterial(record, typeMaterialWriteStream)
             }     
@@ -437,7 +456,7 @@ let taxaWritten = 0;
             if(record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER && /* !nameAlreadyWrittenToId &&  */!linkedAcceptedId){
             let parentId = isAcceptedTaxon(record) ? GENUS_TO_ID.get(record?.Genus_x0020_name) : (linkedAcceptedId || record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER);//SYNONYM_GENUS_TO_ID.get(record?.Genus_x0020_name)
             let referenceID =  writeColDPReference(record, referenceWriteStream)
-            row = `${ID}\t${parentId || ''}\t${record.NAME_x0020_OF_x0020_FUNGUS}\t${record?.AUTHORS || ''}\tspecies\t${record?.BASIONYM_x0020_RECORD_x0020_NUMBER || ''}\t${status}\t${url+record?.RECORD_x0020_NUMBER}\t${getTaxonRemarks(record)}\t${getNomStatus(record)}\t${record?.NOMENCLATURAL_x0020_COMMENT || ''}\t${namePublishedInPageLink}\t${extinct}\t${referenceID}\t${referenceID}\n`
+            row = `${ID}\t${parentId || ''}\t${record?.NAME_x0020_OF_x0020_FUNGUS}\t${record?.AUTHORS || ''}\tspecies\t${record?.BASIONYM_x0020_RECORD_x0020_NUMBER || ''}\t${status}\t${url+record?.RECORD_x0020_NUMBER}\t${getTaxonRemarks(record)}\t${getNomStatus(record)}\t${record?.NOMENCLATURAL_x0020_COMMENT || ''}\t${namePublishedInPageLink}\t${extinct}\t${referenceID}\t${referenceID}\n`
            // writeColDPReference(record, referenceWriteStream)
             writeColDPTypeMaterial(record, typeMaterialWriteStream)
             } else {
@@ -547,6 +566,10 @@ let taxaWritten = 0;
   const runCOLDP = ()=>{
 
     var parentReadStream = fs.createReadStream(`data/indexfungorum.txt`);
+    parentReadStream.on('error', (err) => {
+        console.log("error")
+        console.log(err)
+    })
    // var parentWriteStream =  fs.createWriteStream(`data/parents.txt`)
     parentReadStream.on('end',  () => {
        /* Now that we have a map of names to IDs for all accepted higher taxa, 

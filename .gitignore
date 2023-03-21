@@ -3,3 +3,5 @@
 .DS_Store
 # Application specific
 /node_modules
+
+/data/*
