@@ -91,9 +91,15 @@ const shouldWriteParent = record => RANKS[record?.INFRASPECIFIC_x0020_RANK] && i
 const isDeprecated = record => record?.EDITORIAL_x0020_COMMENT && (record?.EDITORIAL_x0020_COMMENT.startsWith('DEPRECATED RECORD') || record?.EDITORIAL_x0020_COMMENT === 'ORTHOGRAPHIC VARIANT RECORD - please do not try to interpret any data on this page or on any of the linked pages' );
 
 const isAcceptedTaxon = record => {
+
+
     if(isDeprecated(record)){
+        
         return false
-    } else {
+    } else if(invalstatus.includes(getNomStatus(record))){
+      
+        return false
+    } else {    
         return !record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER || (record?.RECORD_x0020_NUMBER === record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER);
     }
 } 
@@ -113,21 +119,28 @@ const readParents = async (inputStream) => {
    
     const transformer = transform(function(record, callback){
        // ALL_RANKS.add(record?.INFRASPECIFIC_x0020_RANK)
+       const test = record?.NAME_x0020_OF_x0020_FUNGUS === "Pezizomycetidae"
+
         if(record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER && !isDeprecated(record)){
             ID_TO_ACCEPTED_ID.set(record?.RECORD_x0020_NUMBER, record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER)
         }
+       
+       
         if(shouldWriteParent(record)){
+          
             RANKS[record?.INFRASPECIFIC_x0020_RANK].data.set(record?.NAME_x0020_OF_x0020_FUNGUS, record?.RECORD_x0020_NUMBER)
+            
             parentNamesProccessed ++;
             if ( (parentNamesProccessed % 1000) === 0 ){
                 console.log(`${parentNamesProccessed} parent names in map`)
             }
         } else if(record?.INFRASPECIFIC_x0020_RANK === "gen." && record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER && record?.RECORD_x0020_NUMBER !== record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER){
+           
             SYNONYM_GENUS_TO_ID.set(record?.NAME_x0020_OF_x0020_FUNGUS, record?.RECORD_x0020_NUMBER)
         }
         callback(null, null)
     }, {
-      parallel: 5
+      parallel: 1
     })
     
     inputStream.pipe(parser).pipe(transformer).pipe(fs.createWriteStream('/dev/null'))
@@ -147,7 +160,8 @@ const readParents = async (inputStream) => {
    
     const transformer = transform(function(record, callback){
         try {
-            const test = parentLinksProccessed  === 367207 //!isNaN(Number(record?.RECORD_x0020_NUMBER)) && Number(record?.RECORD_x0020_NUMBER)   === 558555;
+           //  const test = record?.Class_x0020_name === "Pezizomycetes" && record?.Order_x0020_name === "Pezizales"
+
            
             if(record?.INFRASPECIFIC_x0020_RANK === "sp."){
                
@@ -155,12 +169,28 @@ const readParents = async (inputStream) => {
                     let pidx = IF_HIGHER_RANKS.indexOf(rank) +1;
                     // skip Insertae Sedis parents
                     while(["Incertae sedis", "Fossil Fungi", "Fossil Ascomycota"].includes(record[IF_HIGHER_RANKS[pidx]])){
+                       
                         pidx++
+                        
                     }
                     if( pidx < IF_HIGHER_RANKS.length && record[rank] && record[IF_HIGHER_RANKS[pidx]]){
-                        let pRank = IF_HIGHER_RANKS[pidx];
-                        const parentId = IF_HIGHER_RANKS_DATA[pRank].get(record[pRank]);
+                        let parentId;
+                        let pRank;
+                        while(pidx < IF_HIGHER_RANKS.length && !parentId){
+                            pRank = IF_HIGHER_RANKS[pidx];
+                            if(record[pRank] === "Incertae sedis"){
+                                pidx++
+                            } else {
+                                parentId = IF_HIGHER_RANKS_DATA[pRank].get(record[pRank]);
+                                pidx++
+                            }     
+                        }
+                        
                         const id = IF_HIGHER_RANKS_DATA[rank].get(record[rank])
+                          /* if(record[rank] === "Pezizales"){
+                            console.log(`${record[pRank]} id ${id} parent ${parentId} `)
+                            //console.log(FAMILY_TO_ID.get('Pezizomycetidae'))
+                        }  */ 
                         PARENT_ID.set(id, parentId)
                     }
                     
@@ -194,7 +224,7 @@ const readParents = async (inputStream) => {
         }
        
     }, {
-      parallel: 5
+      parallel: 1
     })
     
     inputStream.pipe(parser).pipe(transformer).pipe(fs.createWriteStream('/dev/null'))
@@ -390,7 +420,6 @@ let taxaWritten = 0;
     }
     // Traverses chained synonyms and gives the accepted ID
     const getLinkedAcceptedId = (record) => {
-        const test = record?.RECORD_x0020_NUMBER === '558557';
         let linkedAcceptedId;
             if(record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER && record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER !== record?.RECORD_x0020_NUMBER){
                 let accepted = record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER;
@@ -427,11 +456,17 @@ let taxaWritten = 0;
         // to avoid duplicates:
         const nameAlreadyWrittenToId =  NAMES_WRITTEN.get(`${record.NAME_x0020_OF_x0020_FUNGUS} ${record?.AUTHORS || ''}`);
         let row = null;
+
+        
+       
         if(record?.NAME_x0020_OF_x0020_FUNGUS === "UNPUBLISHED NAME" || record?.EDITORIAL_x0020_COMMENT === "DEPRECATED RECORD - please do not try to interpret any data on this page or on any of the linked pages" || record?.EDITORIAL_x0020_COMMENT === "ORTHOGRAPHIC VARIANT RECORD - please do not try to interpret any data on this page or on any of the linked pages"){
             row = null;
+           
         }
         else if(shouldWriteParent(record)){
+
             let parentId = PARENT_ID.get(record?.RECORD_x0020_NUMBER);
+
             if(parentId || record?.INFRASPECIFIC_x0020_RANK === "regn.") {
                 let referenceID = writeColDPReference(record, referenceWriteStream);
                 row = `${ID}\t${parentId || ''}\t${record?.NAME_x0020_OF_x0020_FUNGUS}\t${record?.AUTHORS || ''}\t${RANKS[record?.INFRASPECIFIC_x0020_RANK].name}\t\t${status}\t${url+record?.RECORD_x0020_NUMBER}\t${getTaxonRemarks(record)}\t${getNomStatus(record)}\t${record?.NOMENCLATURAL_x0020_COMMENT || ''}\t${namePublishedInPageLink}\t${extinct}\t${referenceID}\t${referenceID}\n`  // TODO all needed data
@@ -439,8 +474,11 @@ let taxaWritten = 0;
                // writeColDPTypeMaterial(record, typeMaterialWriteStream)
                 writeColDPNameRelation(record, nameRelationWriteStream)
             }
+            
         } else if(INF_RANKS.includes(record?.INFRASPECIFIC_x0020_RANK)){   
+
             if(record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER){
+ 
                 let parentSpecies = SPECIES_NAME_TO_ID.get(`${record?.Genus_x0020_name}_${record?.SPECIFIC_x0020_EPITHET}`);
                 let parentId = isAcceptedTaxon(record) && parentSpecies ?  _.get(parentSpecies, 'RECORD_x0020_NUMBER') : record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER;
                 let referenceID =  writeColDPReference(record, referenceWriteStream)
@@ -451,38 +489,54 @@ let taxaWritten = 0;
             
 
         } else if( record?.INFRASPECIFIC_x0020_RANK === 'sp.'){
+
+            
             const linkedAcceptedId = getLinkedAcceptedId(record);
+
+        
            // console.log(`${record.NAME_x0020_OF_x0020_FUNGUS} ${record?.RECORD_x0020_NUMBER} ${nameAlreadyWrittenToId?.acceptedID}`)
-            if(record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER && /* !nameAlreadyWrittenToId &&  */!linkedAcceptedId){
-            let parentId = isAcceptedTaxon(record) ? GENUS_TO_ID.get(record?.Genus_x0020_name) : (linkedAcceptedId || record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER);//SYNONYM_GENUS_TO_ID.get(record?.Genus_x0020_name)
+            if(!nameAlreadyWrittenToId /*  record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER && !nameAlreadyWrittenToId &&  !linkedAcceptedId*/){
+                
+            let parentId = isAcceptedTaxon(record) ? GENUS_TO_ID.get(record?.Genus_x0020_name) : (linkedAcceptedId || record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER || "");//SYNONYM_GENUS_TO_ID.get(record?.Genus_x0020_name)
+            
             let referenceID =  writeColDPReference(record, referenceWriteStream)
+            
             row = `${ID}\t${parentId || ''}\t${record?.NAME_x0020_OF_x0020_FUNGUS}\t${record?.AUTHORS || ''}\tspecies\t${record?.BASIONYM_x0020_RECORD_x0020_NUMBER || ''}\t${status}\t${url+record?.RECORD_x0020_NUMBER}\t${getTaxonRemarks(record)}\t${getNomStatus(record)}\t${record?.NOMENCLATURAL_x0020_COMMENT || ''}\t${namePublishedInPageLink}\t${extinct}\t${referenceID}\t${referenceID}\n`
            // writeColDPReference(record, referenceWriteStream)
+           
             writeColDPTypeMaterial(record, typeMaterialWriteStream)
+ 
+            
             } else {
+      
                 // verify that the already written record points to the same accpted taxon
                 if(nameAlreadyWrittenToId && (nameAlreadyWrittenToId.acceptedID === (linkedAcceptedId || record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER) || !nameAlreadyWrittenToId.acceptedID )){
                     let refId = writeColDPReference(record, referenceWriteStream, nameAlreadyWrittenToId.ID)
 
                     writeColDPTypeMaterial(record, typeMaterialWriteStream, nameAlreadyWrittenToId.ID, refId)
+                   
                 } else if(linkedAcceptedId){
                     let replacementID = ID_TO_ACCEPTED_ID.get(record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER);
                     let refId = writeColDPReference(record, referenceWriteStream, replacementID)
 
                     writeColDPTypeMaterial(record, typeMaterialWriteStream, replacementID, refId)
+                    
                 } else {
                     let rec;
                     let acc = SPECIES_NAME_TO_ID.get(`${record?.Genus_x0020_name}_${record?.SPECIFIC_x0020_EPITHET}`)
                     let syn = SPECIES_SYN_TO_ID.get(`${record?.Genus_x0020_name}_${record?.SPECIFIC_x0020_EPITHET}`)
                     if(acc && record?.AUTHORS === acc.AUTHORS){
                         rec = acc.RECORD_x0020_NUMBER
+                        
                     } else if(syn && record?.AUTHORS === syn.AUTHORS){
                         rec = syn.RECORD_x0020_NUMBER
+                        
                     }
                     if(rec){
                         let refId = writeColDPReference(record, referenceWriteStream, rec)
 
                     writeColDPTypeMaterial(record, typeMaterialWriteStream, rec, refId)
+                    
                     }
                     
                 }
@@ -492,7 +546,9 @@ let taxaWritten = 0;
         } else if((record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER && record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER !==ID) && ALL_RANKS[record?.INFRASPECIFIC_x0020_RANK] ){
             // include synonym taxa at all higher ranks 
             let acceptedId = record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER;    
+
             if(acceptedId){
+
                 let referenceID = writeColDPReference(record, referenceWriteStream)
                 row = `${ID}\t${acceptedId}\t${record.NAME_x0020_OF_x0020_FUNGUS}\t${record?.AUTHORS || ''}\t${ALL_RANKS[record?.INFRASPECIFIC_x0020_RANK].name}\t${record?.BASIONYM_x0020_RECORD_x0020_NUMBER || ''}\t${status}\t${url+record?.RECORD_x0020_NUMBER}\t${getTaxonRemarks(record)}\t${getNomStatus(record)}\t${record?.NOMENCLATURAL_x0020_COMMENT || ''}\t${namePublishedInPageLink}\t${extinct}\t${referenceID}\t${referenceID}\n`
                // writeColDPReference(record, referenceWriteStream)
@@ -503,7 +559,7 @@ let taxaWritten = 0;
             }
             
         }
-        
+
 
         if(row){
             let linkedAcceptedId = getLinkedAcceptedId(record)
@@ -601,21 +657,6 @@ let taxaWritten = 0;
               writeTaxaColDP(taxonReadStream, nameUsageWriteStream, referenceWriteStream, typeMaterialWriteStream, nameRelationWriteStream)
             nameUsageWriteStream.on('finish', () => {
                 console.log(`Found ${SYNONYM_GENUS_TO_ID.size} missing accepted genera`)
-                
-               /*  var ws =  fs.createWriteStream(`data/nomstatus.json`, {
-                    flags: 'a' 
-                  })
-                  ws.write(JSON.stringify([...NOMSTATUS], null, 2)) */
-                /* var missingGenera = fs.createWriteStream(`data/missing_genera.txt`)
-                for (const [key, value] of SYNONYM_GENUS_TO_ID.entries()) {
-                    missingGenera.write(`${key}\t${value}`);
-                  } */
-
-
-                  /*   var ws =  fs.createWriteStream(`data/allranks.json`, {
-                    flags: 'a' 
-                  })
-                  ws.write(JSON.stringify([...ALL_RANKS], null, 2))  */
                 
 
             })
