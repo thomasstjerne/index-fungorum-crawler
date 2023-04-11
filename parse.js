@@ -437,6 +437,8 @@ let taxaWritten = 0;
             
         return linkedAcceptedId;
     }
+
+
   const writeTaxaColDP = async (inputStream, outputStream, referenceWriteStream, typeMaterialWriteStream, nameRelationWriteStream) => {
     console.log("writeTaxaColDP")
     const parser = parse({
@@ -456,8 +458,6 @@ let taxaWritten = 0;
         // to avoid duplicates:
         const nameAlreadyWrittenToId =  NAMES_WRITTEN.get(`${record.NAME_x0020_OF_x0020_FUNGUS} ${record?.AUTHORS || ''}`);
         let row = null;
-
-        
        
         if(record?.NAME_x0020_OF_x0020_FUNGUS === "UNPUBLISHED NAME" || record?.EDITORIAL_x0020_COMMENT === "DEPRECATED RECORD - please do not try to interpret any data on this page or on any of the linked pages" || record?.EDITORIAL_x0020_COMMENT === "ORTHOGRAPHIC VARIANT RECORD - please do not try to interpret any data on this page or on any of the linked pages"){
             row = null;
@@ -493,9 +493,8 @@ let taxaWritten = 0;
             
             const linkedAcceptedId = getLinkedAcceptedId(record);
 
-        
            // console.log(`${record.NAME_x0020_OF_x0020_FUNGUS} ${record?.RECORD_x0020_NUMBER} ${nameAlreadyWrittenToId?.acceptedID}`)
-            if(!nameAlreadyWrittenToId /*  record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER && !nameAlreadyWrittenToId &&  !linkedAcceptedId*/){
+            if(!nameAlreadyWrittenToId || (isAcceptedTaxon(record) && nameAlreadyWrittenToId.ID !== nameAlreadyWrittenToId.acceptedID)){
                 
             let parentId = isAcceptedTaxon(record) ? GENUS_TO_ID.get(record?.Genus_x0020_name) : (linkedAcceptedId || record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER || "");//SYNONYM_GENUS_TO_ID.get(record?.Genus_x0020_name)
             
