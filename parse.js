@@ -400,12 +400,13 @@ let taxaWritten = 0;
 
   const writeColDPTypeMaterial = (record, typeMaterialWriteStream, idFromOtherRecord, referenceID) => {
       if(record?.TYPIFICATION_x0020_DETAILS && [...INF_RANKS, "sp."].includes(record?.INFRASPECIFIC_x0020_RANK)){
+          let typificationRecordNumber = record?.STS_x0020_FLAG === "t" ? record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER : null;
           let splitted = record?.TYPIFICATION_x0020_DETAILS.split(" ");
           let status = TYPE.has(splitted[0].trim().toLowerCase()) ? splitted[0] : "";
           let splitted2 = record?.TYPIFICATION_x0020_DETAILS.split("|");
           let associatedSequences = splitted2.length === 2 && splitted2[1].startsWith("http://www.ncbi.nlm.nih.gov/nuccore/") ? splitted2[1] : "";
           const citation = record?.LOCATION ? `${record?.TYPIFICATION_x0020_DETAILS}, ${record?.LOCATION}`: record?.TYPIFICATION_x0020_DETAILS;
-          typeMaterialWriteStream.write(`${idFromOtherRecord || record?.RECORD_x0020_NUMBER}\t${status}\t${citation}\t${associatedSequences}\t${referenceID || ''}\n`)
+          typeMaterialWriteStream.write(`${typificationRecordNumber || idFromOtherRecord || record?.RECORD_x0020_NUMBER}\t${status}\t${citation}\t${associatedSequences}\t${referenceID || ''}\n`)
       }
 }
     const writeColDPNameRelation = (record, nameRelationWriteStream) => {
@@ -459,7 +460,11 @@ let taxaWritten = 0;
         const nameAlreadyWrittenToId =  NAMES_WRITTEN.get(`${record.NAME_x0020_OF_x0020_FUNGUS} ${record?.AUTHORS || ''}`);
         let row = null;
        
-        if(record?.NAME_x0020_OF_x0020_FUNGUS === "UNPUBLISHED NAME" || record?.EDITORIAL_x0020_COMMENT === "DEPRECATED RECORD - please do not try to interpret any data on this page or on any of the linked pages" || record?.EDITORIAL_x0020_COMMENT === "ORTHOGRAPHIC VARIANT RECORD - please do not try to interpret any data on this page or on any of the linked pages"){
+        if(
+            record?.NAME_x0020_OF_x0020_FUNGUS === "UNPUBLISHED NAME" || 
+            record?.EDITORIAL_x0020_COMMENT === "DEPRECATED RECORD - please do not try to interpret any data on this page or on any of the linked pages" || 
+            record?.EDITORIAL_x0020_COMMENT === "ORTHOGRAPHIC VARIANT RECORD - please do not try to interpret any data on this page or on any of the linked pages" || 
+            ["t", "i"].includes(record?.STS_x0020_FLAG)){
             row = null;
            
         }
