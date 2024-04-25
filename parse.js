@@ -421,18 +421,29 @@ let taxaWritten = 0;
     }
     // Traverses chained synonyms and gives the accepted ID
     const getLinkedAcceptedId = (record) => {
-        let linkedAcceptedId;
+/*         const debug = record?.NAME_x0020_OF_x0020_FUNGUS === "Allantonectria"
+ */        let linkedAcceptedId;
             if(record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER && record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER !== record?.RECORD_x0020_NUMBER){
+                const seenBefore = new Set()
+                seenBefore.add(record?.RECORD_x0020_NUMBER)
                 let accepted = record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER;
-               
+                seenBefore.add(accepted)
+               /*  if(debug){
+                    console.log(`record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER ${record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER}`)
+                } */
                 let done = ID_TO_ACCEPTED_ID.get(accepted) === accepted;
-              
+                /* if(debug){
+                console.log(`ID_TO_ACCEPTED_ID.get(accepted) ${ID_TO_ACCEPTED_ID.get(accepted)}`)
+                } */
                 while(!done ){
                     accepted = ID_TO_ACCEPTED_ID.get(accepted);
-                    done = !accepted  || ID_TO_ACCEPTED_ID.get(accepted) === accepted;
+                   /*  if(debug){
+                    console.log(`ID_TO_ACCEPTED_ID.get(accepted) ${ID_TO_ACCEPTED_ID.get(accepted)}`)
+                    } */
+                    done = !accepted  || ID_TO_ACCEPTED_ID.get(accepted) === accepted || seenBefore.has(accepted);
                     if(done){
                         linkedAcceptedId = accepted;
-                    }
+                    } 
                 }
             }
             
@@ -452,7 +463,10 @@ let taxaWritten = 0;
     });
    // ['ID','parentID','scientificName','authorship','rank','basionymID', 'status', 'link', 'remarks', 'nameStatus','nameRemarks', 'namePublishedInPageLink', 'extinct', 'referenceID', 'nameReferenceID'],
     const transformer = transform(function(record, callback){
-        const namePublishedInPageLink =  getNamePublishedInPageLink(record) // record?.CORRECTION ? record?.CORRECTION.replace(/\$[A-Z]http:/g, "http:") : "";
+      //  console.log(record?.NAME_x0020_OF_x0020_FUNGUS)
+
+        try {
+            const namePublishedInPageLink =  getNamePublishedInPageLink(record) // record?.CORRECTION ? record?.CORRECTION.replace(/\$[A-Z]http:/g, "http:") : "";
         const status = getColdpStatus(record);
         const extinct = isExtinct(record)
         const ID = record?.RECORD_x0020_NUMBER;
@@ -495,7 +509,7 @@ let taxaWritten = 0;
 
         } else if( record?.INFRASPECIFIC_x0020_RANK === 'sp.'){
 
-            
+
             const linkedAcceptedId = getLinkedAcceptedId(record);
 
            // console.log(`${record.NAME_x0020_OF_x0020_FUNGUS} ${record?.RECORD_x0020_NUMBER} ${nameAlreadyWrittenToId?.acceptedID}`)
@@ -512,7 +526,7 @@ let taxaWritten = 0;
  
             
             } else {
-      
+
                 // verify that the already written record points to the same accpted taxon
                 if(nameAlreadyWrittenToId && (nameAlreadyWrittenToId.acceptedID === (linkedAcceptedId || record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER) || !nameAlreadyWrittenToId.acceptedID )){
                     let refId = writeColDPReference(record, referenceWriteStream, nameAlreadyWrittenToId.ID)
@@ -549,6 +563,7 @@ let taxaWritten = 0;
 
         } else if((record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER && record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER !==ID) && ALL_RANKS[record?.INFRASPECIFIC_x0020_RANK] ){
             // include synonym taxa at all higher ranks 
+
             let acceptedId = record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER;    
 
             if(acceptedId){
@@ -566,17 +581,32 @@ let taxaWritten = 0;
 
 
         if(row){
+            
+
             let linkedAcceptedId = getLinkedAcceptedId(record)
+           /*  if(debug){
+                console.log(7)
+                console.log(`${record.NAME_x0020_OF_x0020_FUNGUS} ${record?.AUTHORS || ''}`)
+                console.log(`linkedAcceptedId ${linkedAcceptedId}`)
+                console.log(`record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER ${record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER}`)
+
+            
+            } */
             NAMES_WRITTEN.set(`${record.NAME_x0020_OF_x0020_FUNGUS} ${record?.AUTHORS || ''}`, {ID, acceptedID: linkedAcceptedId || record?.CURRENT_x0020_NAME_x0020_RECORD_x0020_NUMBER})
             taxaWritten++
            // console.log(`${record.NAME_x0020_OF_x0020_FUNGUS} ${record?.RECORD_x0020_NUMBER} ${nameAlreadyWrittenToId?.acceptedID}`)
 
         }
-        if ((taxaWritten % 10000) === 0){
+        if ((taxaWritten % 10) === 0){
             console.log(`${taxaWritten} taxa written to file`)
         }
         
         callback(null, row || "")
+        } catch (error) {
+            console.log(error)
+            callback(error, null)
+        }
+        
     }, {
       parallel: 5
     })
